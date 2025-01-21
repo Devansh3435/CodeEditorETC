@@ -3,215 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Python Compiler</title>
+    <title>Python Code Editor</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.23.2/full/pyodide.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/matchbrackets.min.js"></script>
+
+    <!-- Include CodeMirror CSS and JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+
     <style>
         body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #282c34;
+            color: #abb2bf;
             margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #1e1e2f;
-            color: white;
+            padding: 0;
             display: flex;
-            height: 100vh;
-        }
-
-        .container {
-            display: flex;
-            width: 100%;
-        }
-
-        .question-panel {
-            width: 35%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
             padding: 20px;
-            background-color: #252535;
-            border-right: 2px solid #444;
-            overflow-y: auto;
         }
 
-        .question-panel h1 {
-            color: #ffa500;
+        h1 {
+            font-size: 2.5rem;
+            color: #61dafb;
             margin-bottom: 20px;
+            text-align: center;
         }
 
-        .code-panel {
-            width: 65%;
+        /* Container for editor and output */
+        .editor-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #2c323c;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 8px;
             display: flex;
             flex-direction: column;
         }
 
-        .editor-container {
-            flex: 1;
-            padding: 10px;
-            background-color: #252535;
-        }
-
-        .run-container {
-            display: flex;
-            justify-content: flex-end;
-            padding: 10px;
-            background-color: #252535;
-        }
-
-        .run-btn {
-            background-color: #ff9d00;
+        /* Button styling */
+        button {
+            padding: 12px 24px;
+            background-color: #61dafb;
+            color: #282c34;
             border: none;
-            color: black;
-            padding: 10px 20px;
+            border-radius: 6px;
             font-size: 16px;
-            border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 10px;
         }
 
-        .run-btn:hover {
-            background-color: #d87d00;
+        button:hover {
+            background-color: #4fa3d1;
+            transform: scale(1.05);
         }
 
-        .output-section {
-            display: flex;
-            padding: 10px;
-            gap: 10px;
-            background-color: #252535;
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
 
-        .output-box {
-            flex: 1;
-            padding: 10px;
-            background-color: #1e1e2f;
-            border-radius: 5px;
-            border: 1px solid #444;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-            white-space: pre-wrap;
-            overflow: auto;
+        /* Output section styling */
+        #output {
+            width: 100%;
             height: 200px;
+            background-color: #2f2f2f;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 20px;
+            font-family: 'Source Code Pro', monospace;
+            font-size: 14px;
         }
 
-        .output-box.success {
-            border-color: #4caf50;
-        }
-
-        .output-box.error {
-            border-color: #f44336;
-        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="question-panel">
-            <h1>Print Pattern</h1>
-            <p>
-                Write code to print a pattern based on the number of rows.
-                Example: If the input is 5, the output should be:
-            </p>
-            <pre>
-*
-**
-***
-****
-*****
-            </pre>
-            <h3>Input:</h3>
-            <pre>5</pre>
-            <h3>Output:</h3>
-            <pre>
-*
-**
-***
-****
-*****
-            </pre>
-        </div>
-        
-        <div class="code-panel">
-            <div class="editor-container" id="editor"></div>
-            <div class="run-container">
-                <button class="run-btn" id="run-btn">Run Code</button>
-            </div>
-            <div class="output-section">
-                <div class="output-box success" id="output">Output will appear here...</div>
-                <div class="output-box error" id="error">Errors will appear here...</div>
-            </div>
-        </div>
+    <h1>Python Code Editor</h1>
+    <div class="editor-container">
+        <textarea id="code" placeholder="Write your Python code here..."></textarea>
+        <button id="run-btn">Run Code</button>
+        <div id="output">Output will appear here...</div>
     </div>
 
     <script>
-        let pyodide, editor;
+        let pyodide;
 
-        async function initPyodide() {
-            if (!pyodide) {
-                pyodide = await loadPyodide();
-            }
-        }
-
-        async function runCode() {
-            await initPyodide();
-            const userCode = editor.getValue();
-            const outputBox = document.getElementById('output');
-            const errorBox = document.getElementById('error');
-        
-            outputBox.textContent = '';
-            errorBox.textContent = '';
-        
-            try {
-                const codeToRun = `
-        import sys
-        from io import StringIO
-        # Capturing the print output
-        old_stdout = sys.stdout
-        sys.stdout = StringIO()
-        
-        # Print pattern code
-        for i in range(1, 6):
-            for j in range(0, i):
-                print("*", end="")
-            print()
-        
-        # Get the captured output
-        output = sys.stdout.getvalue()
-        
-        # Reset stdout
-        sys.stdout = old_stdout
-        
-        output
-        `;
-        
-                const output = await pyodide.runPythonAsync(codeToRun);
-        
-                if (output) {
-                    outputBox.textContent = `Output:\n${output}`;
-                    outputBox.classList.add('success');
-                    outputBox.classList.remove('error');
-                } else {
-                    outputBox.textContent = 'No output produced.';
-                    outputBox.classList.add('error');
-                    outputBox.classList.remove('success');
-                }
-        
-            } catch (error) {
-                errorBox.textContent = `Error:\n${error.message}`;
-                errorBox.classList.add('error');
-                errorBox.classList.remove('success');
-            }
-        }
-
-
-        editor = CodeMirror(document.getElementById('editor'), {
+        // Initialize CodeMirror editor
+        const editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+            lineNumbers: true,
             mode: 'python',
             theme: 'dracula',
-            lineNumbers: true,
-            autoCloseBrackets: true,
             matchBrackets: true,
-            tabSize: 4,
-            indentWithTabs: true,
+            autoCloseBrackets: true,
+            indentUnit: 4,
+            indentWithTabs: true
         });
 
-        document.getElementById('run-btn').addEventListener('click', runCode);
+        async function loadPyodideAndRun() {
+            if (!pyodide) {
+                document.getElementById('output').textContent = 'Running Code, please wait...';
+                pyodide = await loadPyodide();
+                document.getElementById('output').textContent = '';
+            }
+
+            pyodide.runPython(`
+                import sys
+                from io import StringIO
+                sys.stdout = StringIO()
+            `);
+
+            const code = editor.getValue();
+
+            try {
+                await pyodide.runPythonAsync(code);
+                const output = pyodide.runPython('sys.stdout.getvalue()');
+                document.getElementById('output').textContent = `Output:\n${output}`;
+            } catch (error) {
+                document.getElementById('output').textContent = `Error:\n${error.message}`;
+            }
+        }
+
+        document.getElementById('run-btn').addEventListener('click', loadPyodideAndRun);
     </script>
 </body>
 </html>
